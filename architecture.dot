@@ -1,0 +1,120 @@
+digraph architecture {
+    // Global Graph settings
+    compound=true;
+    fontname="Helvetica,Arial,sans-serif";
+    fontsize=14;
+    rankdir=LR;
+    nodesep=0.5;
+    ranksep=1.0;
+    splines=ortho;
+
+    // Global Node settings
+    node [fontname="Helvetica,Arial,sans-serif", style="rounded,filled", shape=box, penwidth=1.5, fontsize=12];
+    
+    // Global Edge settings
+    edge [fontname="Helvetica,Arial,sans-serif", fontsize=10, color="#2C3E50", penwidth=1.5];
+
+    // ==========================================
+    // EXTERNAL ENTITIES
+    // ==========================================
+    User [label="🧑 Mike (User)", shape=oval, fillcolor="#E8F8F5", color="#1ABC9C", width=1.5];
+    LLM [label="🧠 LM Studio\n(meta-llama-3.1-8b)", shape=cylinder, fillcolor="#FDEDEC", color="#E74C3C"];
+    Target [label="🎯 Target Machine\n(HTB / CTF)", shape=doubleoctagon, fillcolor="#F2D7D5", color="#C0392B"];
+    
+    // ==========================================
+    // INTERFACES (Frontend)
+    // ==========================================
+    subgraph cluster_interfaces {
+        label="🖥️ Interfaces";
+        style="rounded,filled";
+        fillcolor="#BBDEFB";
+        color="#1E88E5";
+        fontname="Helvetica-Bold";
+
+        CLI [label="💻 Local CLI\n(clawd.py)", fillcolor="#FFFFFF", color="#1E88E5"];
+        Telegram [label="📱 Telegram Bot\n(telegram_bot.py)", fillcolor="#FFFFFF", color="#1E88E5"];
+    }
+
+    // ==========================================
+    // CORE ENGINE
+    // ==========================================
+    subgraph cluster_core {
+        label="⚙️ Core Logic";
+        style="rounded,filled";
+        fillcolor="#FFF9C4";
+        color="#FBC02D";
+        fontname="Helvetica-Bold";
+
+        Mind [label="📜 Persona & Rules\n(mind.md)", shape=note, fillcolor="#FFF9C4", color="#FBC02D", style="dashed,filled"];
+        Config [label="⚙️ Config\n(config.py)", shape=note, fillcolor="#FFF9C4", color="#FBC02D", style="dashed,filled"];
+        Engine [label="🦀 Clawd Engine\n(engine.py)\n[Tool Caller & Orchestrator]", shape=component, fillcolor="#FFFFFF", color="#FBC02D", height=1.2];
+    }
+
+    // ==========================================
+    // MEMORY SYSTEMS
+    // ==========================================
+    subgraph cluster_memory {
+        label="💾 Memory Systems";
+        style="rounded,filled";
+        fillcolor="#E1BEE7";
+        color="#8E24AA";
+        fontname="Helvetica-Bold";
+
+        TargetMem [label="🎯 Target State Tracker\n(target_memory.py)\n[Facts | Failures | Hypotheses]", fillcolor="#FFFFFF", color="#8E24AA"];
+        NotesMem [label="🗂️ Notes Index\n(notes_index.py)\n[Tagged Output Chunks]", fillcolor="#FFFFFF", color="#8E24AA"];
+        SessionMem [label="💬 Session Context\n(memory.py)\n[Chat Logs]", fillcolor="#FFFFFF", color="#8E24AA"];
+    }
+
+    // ==========================================
+    // EXECUTION ENVIRONMENT
+    // ==========================================
+    subgraph cluster_exec {
+        label="🛠️ Execution Environment";
+        style="rounded,filled";
+        fillcolor="#C5E1A5";
+        color="#7CB342";
+        fontname="Helvetica-Bold";
+
+        Executor [label="🏃 Executor Tools\n(executor.py)", shape=component, fillcolor="#FFFFFF", color="#7CB342", height=0.8];
+        WebReader [label="🌐 Web Parser\n(HTML/Comments)", shape=rect, fillcolor="#E8F5E9", color="#4CAF50"];
+        WSL [label="🐧 WSL Ubuntu Subsystem\n[root shell]", shape=cylinder, fillcolor="#E8F5E9", color="#4CAF50"];
+        Workspace [label="📂 Workspace Area\n[scans/, scripts/]", shape=folder, fillcolor="#E8F5E9", color="#4CAF50"];
+    }
+
+    // ==========================================
+    // RELATIONSHIPS & DATA FLOW
+    // ==========================================
+    
+    // User interactions
+    User -> CLI [label=" stdin/args" color="#1ABC9C" fontcolor="#1ABC9C"];
+    User -> Telegram [label=" Messages" color="#1ABC9C" fontcolor="#1ABC9C"];
+    
+    // Interfaces to Engine
+    CLI -> Engine [label=" Chat Input"];
+    Telegram -> Engine [label=" Chat Input"];
+    
+    // Engine dependencies
+    Mind -> Engine [style=dashed, label=" Injects Prompt", constraint=false];
+    Config -> Engine [style=dashed, label=" Settings", constraint=false];
+    
+    // Engine <-> LLM
+    Engine -> LLM [label=" OpenAI API\n(Prompts/Tools)", dir=both, color="#E74C3C", fontcolor="#E74C3C"];
+    
+    // Engine <-> Memory Systems
+    Engine -> TargetMem [label=" Log/Recall" color="#8E24AA" fontcolor="#8E24AA"];
+    Engine -> NotesMem [label=" Store/Search" color="#8E24AA" fontcolor="#8E24AA"];
+    Engine -> SessionMem [label=" Save/Load" color="#8E24AA" fontcolor="#8E24AA"];
+
+    // Engine <-> Tools
+    Engine -> Executor [label=" Calls Command/Files" color="#27AE60" fontcolor="#27AE60" penwidth=2.0];
+    Engine -> WebReader [label=" Reads Webpages"];
+    
+    // Execution Environment internal
+    Executor -> WSL [label=" wsl -u root bash -c" color="#2ECC71" fontcolor="#2ECC71" penwidth=2.0];
+    Executor -> Workspace [label=" write_file/read_file"];
+    WSL -> Workspace [label=" Saves Scan Outputs" style=dashed, constraint=false];
+    
+    // Attacks / Network
+    WSL -> Target [label=" Network Traffic\n(nmap, gobuster, etc.)" color="#C0392B" fontcolor="#C0392B" penwidth=2.0];
+    WebReader -> Target [label=" HTTP GET"];
+}

@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+
+# VPN Configs
+*.ovpn
+
+# Sensitive Logs / Storage
+memory/
+workspace/
+.env
+
+# MacOS / Windows artifacts
+.DS_Store
+Thumbs.db
