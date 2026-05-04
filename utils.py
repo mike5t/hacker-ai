@@ -8,6 +8,11 @@ from rich.panel import Panel
 from rich.text import Text
 
 console = Console()
+# Force utf-8 on Windows
+import sys
+if sys.platform == "win32":
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 # ──────────────────────────────────────────────
 # Banner

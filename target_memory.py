@@ -144,6 +144,10 @@ def add_hypothesis(target: str, hypothesis: str) -> dict:
     """
     data = _load(target)
 
+    # Reject empty/None hypotheses
+    if not hypothesis or not hypothesis.strip() or hypothesis.strip().lower() in ("none", "null", "n/a"):
+        return {"success": False, "message": "Hypothesis text is empty or invalid."}
+
     # Deduplicate
     for existing in data["hypotheses"]:
         if existing["text"].strip().lower() == hypothesis.strip().lower():

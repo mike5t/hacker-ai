@@ -7,6 +7,11 @@ Usage:
     python telegram_bot.py
 """
 
+import sys, io
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 import asyncio
 
 import json
@@ -55,14 +60,33 @@ def get_engine(user_id: int) -> ClawdEngine:
     return user_engines[user_id]
 
 
-def _log_tool_call(user_id: int, name: str, args: dict, result: dict):
+def _log_tool_call(user_id: int, name: str, args, result):
     """Log tool call for later display."""
     if user_id not in user_tool_logs:
         user_tool_logs[user_id] = []
 
+    # Safely handle args — could be dict or string
+    if isinstance(args, str):
+        args = {"command": args}
+
+    # Safely handle result — could be dict or string
+    result_dict = {}
+    if isinstance(result, dict):
+        result_dict = result
+    elif isinstance(result, str):
+        try:
+            import json as _json
+            # Skip truth gate prefix if present
+            payload = result.split("\n\n", 1)[-1] if "\n\n" in result else result
+            parsed = _json.loads(payload)
+            if isinstance(parsed, dict):
+                result_dict = parsed
+        except (ValueError, TypeError):
+            pass
+
     if name == "run_command":
-        cmd = args.get("command", "?")
-        exit_code = result.get("exit_code", "?")
+        cmd = args.get("command", "?") if isinstance(args, dict) else str(args)
+        exit_code = result_dict.get("exit_code", "?")
         user_tool_logs[user_id].append(f"⚙️ `{cmd}`  →  exit {exit_code}")
     elif name == "write_file":
         path = args.get("path", "?")
@@ -84,7 +108,12 @@ def _log_tool_call(user_id: int, name: str, args: dict, result: dict):
     elif name == "search_notes":
         user_tool_logs[user_id].append(f"🔎 Searched notes for '{args.get('query', args.get('tags', '?'))}'")
     elif name == "read_webpage":
-        user_tool_logs[user_id].append(f"🌐 Browsed: `html {args.get('url', '?')}`")
+        user_tool_logs[user_id].append(f"🌐 Browsed: `{args.get('url', '?')}`")
+    elif name == "web_recon":
+        user_tool_logs[user_id].append(f"🔍 Web recon: `{args.get('url', '?')}`")
+    else:
+        # Generic log for new/unknown tools
+        user_tool_logs[user_id].append(f"🔧 {name}")
 
 
 # ──────────────────────────────────────────────
@@ -133,7 +162,21 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def cmd_clear(update: Update, context: ContextTypes.DEFAULT_TYPE):
     engine = get_engine(update.effective_user.id)
     engine.clear_history()
-    await update.message.reply_text("✅ Conversation cleared.")
+    await update.message.reply_text("✅ Conversation cleared. Active target reset.")
+
+
+async def cmd_done(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Mark current target as done and reset everything for a fresh session."""
+    engine = get_engine(update.effective_user.id)
+    old_target = engine.active_target
+    engine.clear_history()
+    if old_target:
+        await update.message.reply_text(
+            f"✅ Done with `{old_target}`. Memory cleared. Ready for a new target.",
+            parse_mode=ParseMode.MARKDOWN
+        )
+    else:
+        await update.message.reply_text("✅ Session reset. Ready for a new target.")
 
 
 async def cmd_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -309,6 +352,7 @@ async def post_init(application: Application):
         BotCommand("start", "Start Clawd"),
         BotCommand("help", "Show commands"),
         BotCommand("clear", "Reset conversation"),
+        BotCommand("done", "Done with current target — fresh start"),
         BotCommand("save", "Save conversation"),
         BotCommand("load", "Load a note"),
         BotCommand("notes", "List notes"),
@@ -333,6 +377,7 @@ def main():
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("help", cmd_help))
     app.add_handler(CommandHandler("clear", cmd_clear))
+    app.add_handler(CommandHandler("done", cmd_done))
     app.add_handler(CommandHandler("save", cmd_save))
     app.add_handler(CommandHandler("load", cmd_load))
     app.add_handler(CommandHandler("notes", cmd_notes))
