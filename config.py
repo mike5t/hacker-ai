@@ -7,8 +7,8 @@ import os
 # ──────────────────────────────────────────────
 # LM Studio Connection
 # ──────────────────────────────────────────────
-LM_STUDIO_URL = os.getenv("LM_STUDIO_URL", "http://169.254.49.150:5000/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "qwen/qwen3-4b-thinking-2507")
+LM_STUDIO_URL = os.getenv("LM_STUDIO_URL", "http://localhost:1234/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "meta-llama-3.1-8b-instruct")
 
 # ──────────────────────────────────────────────
 # Paths
@@ -27,10 +27,9 @@ MAX_CONTEXT_MESSAGES = 40  # Keep last N messages to avoid overflowing context
 # ──────────────────────────────────────────────
 # Telegram
 # ──────────────────────────────────────────────
-TELEGRAM_BOT_TOKEN = os.getenv(
-    "TELEGRAM_BOT_TOKEN",
-    "8261353318:AAGXlsb-MaE8ugUEb7LFu5yP7V6aW9nGoDw"
-)
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+if not TELEGRAM_BOT_TOKEN:
+    print("[WARNING] TELEGRAM_BOT_TOKEN not set. Set it via environment variable.")
 
 # ──────────────────────────────────────────────
 # Command Execution

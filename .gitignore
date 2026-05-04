@@ -1,14 +1,49 @@
 __pycache__/
 *.pyc
+.pytest_cache/
 
-# VPN Configs
+# ──────────────────────────────────────────────
+# SECRETS & SENSITIVE DATA
+# ──────────────────────────────────────────────
+# Environment variables (NEVER commit - use .env.example instead)
+.env
+.env.local
+.env.*.local
+
+# VPN Configurations (may contain credentials)
 *.ovpn
 
-# Sensitive Logs / Storage
+# Execution Artifacts
+# ──────────────────────────────────────────────
+# Target state and findings (contains sensitive data)
 memory/
-workspace/
-.env
+memory_*.json
 
-# MacOS / Windows artifacts
+# Working directory with loot and scan results
+workspace/
+
+# RL Training Data
+rl_episodes/
+rl_models/
+rl_buffer/
+
+# MacOS / Windows / IDE artifacts
+# ──────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+dist/
+build/
+*.egg-info/
+.Python
+
+# Temporary files
+*.tmp
+*.bak
+*.log
